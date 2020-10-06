@@ -1,0 +1,4 @@
+dataset/
+__pycache__/
+.DS_Store
+output_music/
