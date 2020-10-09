@@ -4,44 +4,41 @@ from .importer import *
 from .base_module import *
 
 class Generator(nn.Module):
-	def __init__(self):
+	def __init__(self,model_size=64,z_dim=100):
 		super().__init__()
-		#畳み込みモジュールの設定を1つずつしていく
-		inchs  = np.array([512,256,128,64,32, 16,  8], dtype=np.uint32)
-		outchs = np.array([256,128, 64,32,16,  8,  4], dtype=np.uint32)
-		sizes  = np.array([  4,  8, 16,32,64,128,256], dtype=np.uint32)
-		#最初の層のみ、それを示すフラグをTrueにしておく
-		firsts = np.array([True,False,False,False,False,False,False], dtype=np.bool)
-		#blockには畳み込み層を格納、toRGBsは入力されたデータを出力画像(RGB3チャネル)に変換するための層を格納
-		blocks, toRGBs = [], []
-		for s, inch, outch, first in zip(sizes, inchs, outchs, firsts):
-			blocks.append(ConvModuleG(s, inch, outch, first))
-			toRGBs.append(nn.Conv2d(outch, 3, 1, padding=0))
-		self.blocks = nn.ModuleList(blocks)
-		self.toRGBs = nn.ModuleList(toRGBs)
-	def forward(self, x, res, eps=1e-7):
-		# to image
-		n,c = x.shape
-		x = x.reshape(n,c//16,4,4)
-		#何層目まで畳み込みを計算するかをresとする
-		res = min(res, len(self.blocks))#resが畳み込み層の数より大きくならないようにする
-		#0~(nlayer-1)層目まで畳み込みを計算する
-		nlayer = max(int(res-eps), 0)
-		for i in range(nlayer):
-			x = self.blocks[i](x)
-		#最後の層（nlayer番目）
-		x_last = self.blocks[nlayer](x)
-		dst_big = self.toRGBs[nlayer](x_last)
-		if nlayer==0:
-			x = dst_big
-		else:
-			#1個下の解像度と混ぜ合わせるようにしながら学習を行う
-			x_sml = F.interpolate(x, x_last.shape[2:4], mode='nearest')
-			dst_sml = self.toRGBs[nlayer-1](x_sml)
-			alpha = res - int(res-eps)
-			x = (1-alpha)*dst_sml + alpha*dst_big
-		#return x, n, res
-		return torch.sigmoid(x)
+		self.model_size = model_size #論文内ではdとされている値
+
+		self.full_connection_1 = nn.Linear(z_dim,256*model_size)
+
+		self.layer_1 = nn.Sequential(
+				Transpose1dLayer(16*model_size,8*model_size,kernel_size=25,stride=1,upsample=4),
+				nn.ReLU(inplace=True))
+		self.layer_2 = nn.Sequential(
+				Transpose1dLayer( 8*model_size,4*model_size,kernel_size=25,stride=1,upsample=4),
+				nn.ReLU(inplace=True))
+		self.layer_3 = nn.Sequential(
+				Transpose1dLayer( 4*model_size,2*model_size,kernel_size=25,stride=1,upsample=4),
+				nn.ReLU(inplace=True))
+		self.layer_4 = nn.Sequential(
+				Transpose1dLayer( 2*model_size,  model_size,kernel_size=25,stride=1,upsample=4),
+				nn.ReLU(inplace=True))
+		self.layer_5 = nn.Sequential(
+				Transpose1dLayer(   model_size,           1,kernel_size=25,stride=1,upsample=4),
+				nn.Tanh())
+
+		for m in self.modules():
+			if isinstance(m, nn.ConvTranspose1d) or isinstance(m, nn.Linear):
+				nn.init.kaiming_normal(m.weight.data)
+
+	def forward(self, x):
+		x = self.full_connection_1(x).view(-1,16*self.model_size,16)
+		x = F.relu(x)
+		x = self.layer_1(x)
+		x = self.layer_2(x)
+		x = self.layer_3(x)
+		x = self.layer_4(x)
+		output = self.layer_5(x)
+		return output
 
 
 

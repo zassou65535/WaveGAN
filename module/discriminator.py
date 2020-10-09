@@ -4,41 +4,50 @@ from .importer import *
 from .base_module import *
 
 class Discriminator(nn.Module):
-	def __init__(self):
+	def __init__(self,model_size=64,shift_factor=2):
 		super().__init__()
-		self.minbatch_std = MiniBatchStd()
-		#畳み込みモジュールの設定を1つずつしていく
-		inchs  = np.array([256,128, 64,32,16, 8,  4],dtype=np.uint32)
-		outchs = np.array([512,256,128,64,32,16,  8],dtype=np.uint32)
-		sizes  = np.array([  1,  4,  8,16,32,64,128],dtype=np.uint32)
-		#最後の層のみ、それを示すフラグをTrueにしておく
-		finals = np.array([True,False,False,False,False,False,False],dtype=np.bool)
-		#blockには畳み込み層を格納、fromRGBsは入力画像(RGB3チャネル)を受け取るための層を格納
-		blocks, fromRGBs = [], []
-		for s, inch, outch, final in zip(sizes, inchs, outchs, finals):
-			fromRGBs.append(nn.Conv2d(3, inch, 1, padding=0))
-			blocks.append(ConvModuleD(s, inch, outch, final=final))
-		self.fromRGBs = nn.ModuleList(fromRGBs)
-		self.blocks = nn.ModuleList(blocks)
-	#resは進捗パラメーター
-	def forward(self, x, res):
-		#何層目から0まで畳み込みを計算するかをresとする
-		res = min(res, len(self.blocks))#resが畳み込み層の数より大きくならないようにする
-		eps = 1e-7
-		nlayer = max(int(res-eps),0)#resがeps以下なら0とみなす
-		#最初の層に通しておく
-		x_first = self.fromRGBs[nlayer](x)
-		x_first = self.blocks[nlayer](x_first)
-		if nlayer==0:
-			x = x_first
-		else:
-			#1個下の解像度と混ぜ合わせるようにしながら学習を行う
-			x_sml = F.adaptive_avg_pool2d(x, x_first.shape[2:4])
-			x_sml = self.fromRGBs[nlayer-1](x_sml)
-			alpha = res - int(res-eps)
-			x = (1-alpha)*x_sml + alpha*x_first
-		#順番に伝搬していく（インデックス番号(nlayer-1)から0まで）
-		for i in range(nlayer):
-			x = self.blocks[nlayer-1-i](x)
-		return x
+		self.model_size = model_size #論文内ではdとされている値
+		self.shift_factor = shift_factor  #n　どれだけ揺さぶりをかけるか
+
+		self.layer_1 = nn.Sequential(
+				nn.Conv1d(           1,   model_size,kernel_size=25,stride=4,padding=11),
+				nn.LeakyReLU(0.2,inplace=True),
+				PhaseShuffle(shift_factor)
+				)
+		self.layer_2 = nn.Sequential(
+				nn.Conv1d(  model_size, 2*model_size,kernel_size=25,stride=4,padding=11),
+				nn.LeakyReLU(0.2,inplace=True),
+				PhaseShuffle(shift_factor)
+				)
+		self.layer_3 = nn.Sequential(
+				nn.Conv1d(2*model_size, 4*model_size,kernel_size=25,stride=4,padding=11),
+				nn.LeakyReLU(0.2,inplace=True),
+				PhaseShuffle(shift_factor)
+				)
+		self.layer_4 = nn.Sequential(
+				nn.Conv1d(4*model_size, 8*model_size,kernel_size=25,stride=4,padding=11),
+				nn.LeakyReLU(0.2,inplace=True),
+				PhaseShuffle(shift_factor)
+				)
+		self.layer_5 = nn.Sequential(
+				nn.Conv1d(8*model_size,16*model_size,kernel_size=25,stride=4,padding=11),
+				nn.LeakyReLU(0.2,inplace=True),
+				PhaseShuffle(shift_factor)
+				)
+
+		self.full_connection_1 = nn.Linear(256 * model_size, 1)
+
+		for m in self.modules():
+			if isinstance(m, nn.Conv1d) or isinstance(m, nn.Linear):
+				nn.init.kaiming_normal(m.weight.data)
+
+	def forward(self, x):
+		x = self.layer_1(x)
+		x = self.layer_2(x)
+		x = self.layer_3(x)
+		x = self.layer_4(x)
+		x = self.layer_5(x)
+		x = x.view(-1, 256 * self.model_size)
+		output = self.full_connection_1(x)
+		return output
 
