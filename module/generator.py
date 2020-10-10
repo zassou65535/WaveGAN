@@ -27,7 +27,7 @@ class Generator(nn.Module):
 				nn.Tanh())
 
 		for m in self.modules():
-			if isinstance(m, nn.ConvTranspose1d) or isinstance(m, nn.Linear):
+			if isinstance(m, nn.ConvTranspose1d) or isinstance(m,nn.Linear):
 				nn.init.kaiming_normal(m.weight.data)
 
 	def forward(self, x):

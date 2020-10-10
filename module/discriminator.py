@@ -35,7 +35,7 @@ class Discriminator(nn.Module):
 				PhaseShuffle(shift_factor)
 				)
 
-		self.full_connection_1 = nn.Linear(256 * model_size, 1)
+		self.full_connection_1 = nn.Linear(256*model_size,1)
 
 		for m in self.modules():
 			if isinstance(m, nn.Conv1d) or isinstance(m, nn.Linear):
@@ -47,7 +47,7 @@ class Discriminator(nn.Module):
 		x = self.layer_3(x)
 		x = self.layer_4(x)
 		x = self.layer_5(x)
-		x = x.view(-1, 256 * self.model_size)
+		x = x.view(-1,256*self.model_size)
 		output = self.full_connection_1(x)
 		return output
 

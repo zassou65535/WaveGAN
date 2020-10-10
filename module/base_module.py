@@ -20,3 +20,7 @@ class Transpose1dLayer(nn.Module):
 			return self.conv_layer_1(x)
 		else:
 			return self.Conv1dTrans(x)
+
+
+
+
