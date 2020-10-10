@@ -1,6 +1,6 @@
 #encoding:utf-8
 
-from importer import *
+from .importer import *
 
 def make_datapath_list(target_path):
 	#データセットを読み込む
@@ -46,7 +46,7 @@ class GAN_Sound_Dataset(data.Dataset):
 		if loaded_sound_length < self.sound_length:
 			padding_length = self.sound_length - loaded_sound_length
 			left_zeros = torch.zeros(padding_length//2).to(self.device)
-			right_zeros = torch.zeros(padding_length - left_padding).to(self.device)
+			right_zeros = torch.zeros(padding_length - padding_length//2).to(self.device)
 			sound = torch.cat([left_zeros,sound,right_zeros],dim=0).to(self.device)
 			loaded_sound_length = self.sound_length
 		#学習に用いる音の長さ分、読み込んだ音声からランダムな箇所を選んで切り出す
