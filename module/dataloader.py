@@ -9,7 +9,7 @@ def make_datapath_list(target_path):
 		path_list.append(path)
 		##読み込むパスを全部表示　必要ならコメントアウトを外す
 		#print(path)
-	#読み込んだ学習データの数を表示
+	#読み込むことになる音声データの数を表示
 	print("sounds : " + str(len(path_list)))
 	return path_list
 
@@ -24,7 +24,7 @@ class GAN_Sound_Dataset(data.Dataset):
 		self.device = device
 		self.sound_length = sound_length
 		self.sampling_rate = sampling_rate
-	#音声の枚数を返す
+	#音声の数を返す
 	def __len__(self):
 		return len(self.file_list)
 	#前処理済み音声の、Tensor形式のデータを取得
