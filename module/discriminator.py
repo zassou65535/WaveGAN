@@ -37,10 +37,6 @@ class Discriminator(nn.Module):
 
 		self.full_connection_1 = nn.Linear(256*model_size,1)
 
-		for m in self.modules():
-			if isinstance(m, nn.Conv1d) or isinstance(m, nn.Linear):
-				nn.init.kaiming_normal(m.weight.data)
-
 	def forward(self, x):
 		x = self.layer_1(x)
 		x = self.layer_2(x)

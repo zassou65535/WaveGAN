@@ -26,10 +26,6 @@ class Generator(nn.Module):
 				Transpose1dLayer(   model_size,           1,kernel_size=25,stride=1,upsample=4),
 				nn.Tanh())
 
-		for m in self.modules():
-			if isinstance(m, nn.ConvTranspose1d) or isinstance(m,nn.Linear):
-				nn.init.kaiming_normal(m.weight.data)
-
 	def forward(self, x):
 		x = self.full_connection_1(x).view(-1,16*self.model_size,16)
 		x = F.relu(x)
