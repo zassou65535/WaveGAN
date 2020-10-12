@@ -5,43 +5,32 @@ from module.discriminator import *
 from module.generator import *
 from module.dataloader import *
 
-#乱数のシードを設定　これにより再現性を確保できる
-manualSeed = 999
-#manualSeed = random.randint(1, 10000) # use if you want new results
-print("Random Seed: ", manualSeed)
-random.seed(manualSeed)
-torch.manual_seed(manualSeed)
-
 #データセットの、各データへのパスのフォーマット　make_datapath_listへの引数
 dataset_path = './dataset/**/*.wav'
 #バッチサイズ
-batch_size = 128
+batch_size = 3
 #入力する乱数の大きさ
 z_dim = 100
 #エポック数
 num_epochs = 10
 #optimizerに使う学習率
 lr = 0.0002
-
-#訓練データの読み込み、データセット作成
-train_img_list = make_datapath_list(dataset_path)
-data_transform = transforms.Compose([
-				transforms.CenterCrop(160),
-				transforms.Resize((64,64)),
-				transforms.ToTensor(),
-				transforms.Normalize([0.5,0.5,0.5],[0.5,0.5,0.5])
-			])
-train_dataset = GAN_Img_Dataset(file_list=train_img_list,transform=data_transform)
-dataloader = torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,shuffle=True)
+#入力、出力する音声のサンプリングレート
+sampling_rate = 16000
 
 #GPUが使用可能かどうか確認
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("device:",device)
 
+#訓練データの読み込み、データセット作成
+train_sound_list = make_datapath_list(dataset_path)
+train_dataset = GAN_Sound_Dataset(file_list=train_sound_list,device=device,batch_size=batch_size)
+dataloader = torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,shuffle=True)
+
 # #ネットワークを初期化するための関数
 def weights_init(m):
 	if isinstance(m, nn.Conv1d) or isinstance(m, nn.ConvTranspose1d) or isinstance(m,nn.Linear):
-		nn.init.kaiming_normal(m.weight.data)
+		nn.init.kaiming_normal_(m.weight.data)
 
 #Generatorのインスタンスを生成
 netG = Generator(z_dim=z_dim)
@@ -90,7 +79,7 @@ for epoch in range(num_epochs):
 		#損失関数　-E[偽音声の判定結果]　を最大化するよう学習する
  		#-------------------------
 		#ノイズを生成
-		z = torch.randn(batch_size, 512*16).to(device)
+		z = torch.randn(batch_size,z_dim).to(device)
 		#ノイズをgeneratorに入力、出力音声をfake_soundとする
 		fake_sound = netG.forward(z)
 		#出力音声fake_soundをdiscriminatorで推論　つまり偽音声の入力をする
@@ -111,7 +100,7 @@ for epoch in range(num_epochs):
 		#損失関数　E[本物の音声の判定結果]-E[偽音声の判定結果]+勾配制約項　を最大化するよう学習する
  		#-------------------------
 		#ノイズを生成、zとする
-		z = torch.randn(minibatch_size,512*16).to(device)
+		z = torch.randn(minibatch_size,z_dim).to(device)
 		#generatorにノイズを入れ偽音声を生成、fake_soundとする
 		fake_sound = netG.forward(z)
 		#本物の音声を判定、結果をdに格納
@@ -124,11 +113,9 @@ for epoch in range(num_epochs):
 		loss_fake = d_.mean()#-E[偽音声の判定結果]を計算
 		#勾配制約項の計算
 		loss_gp = gradient_penalty(netD,real_sound.data,fake_sound.data,minibatch_size)
-		loss_drift = (d**2).mean()
 		beta_gp = 10.0
-		beta_drift = 0.001
 		#E[本物の音声の判定結果]-E[偽音声の判定結果]+勾配制約項 を計算
-		errD = -loss_real + loss_fake + beta_gp*loss_gp + beta_drift*loss_drift
+		errD = -loss_real + loss_fake + beta_gp*loss_gp
 		#前のイテレーションで計算した傾きが残ってしまっているのでそれをリセットしておく
 		optimizerD.zero_grad()
 		#損失の傾きを計算して
@@ -159,9 +146,11 @@ if not os.path.exists("./output"):
 	os.makedirs("./output")
 
 #生成された音声の出力
-sampling_rate = 16000#出力する音声のサンプリングレート
-for i,samp in enumerate(epoch_samples):
-	librosa.output.write_wav("./output/generated_{}.wav".format(i+1),samp[0],sampling_rate)
+generating_num = 20#音声をいくつ出力したいか
+z = torch.randn(generating_num,z_dim).to(device)
+generated_sound = netG(z)
+for i,sound in enumerate(generated_sound):
+	librosa.output.write_wav("./output/generated_sound_{}.wav".format(i+1),sound,sampling_rate)
 
 #学習にかかった時間を出力
 #学習終了時の時間を記録
@@ -169,7 +158,7 @@ t_epoch_finish = time.time()
 total_time = t_epoch_finish - t_epoch_start
 with open('./output/time.txt', mode='w') as f:
 	f.write("total_time: {:.4f} sec.\n".format(total_time))
-	f.write("dataset size: {}\n".format(len(train_img_list)))
+	f.write("dataset size: {}\n".format(len(train_sound_list)))
 	f.write("num_epochs: {}\n".format(num_epochs))
 	f.write("batch_size: {}\n".format(batch_size))
 

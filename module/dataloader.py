@@ -15,22 +15,24 @@ def make_datapath_list(target_path):
 
 class GAN_Sound_Dataset(data.Dataset):
 	#音声のデータセットクラス
-	def __init__(self,file_list,device,sound_length=16384,sampling_rate=16000):
+	def __init__(self,file_list,device,batch_size,sound_length=16384,sampling_rate=16000):
 		#file_list     : 読み込む音声のパスのリスト
 		#device        : gpuで処理するかどうかを決める
+		#batch_size    : バッチサイズ
 		#sound_length  : 学習に用いる音の長さ
 		#sampling_rate : 音声を読み込む際のサンプリングレート
 		self.file_list = file_list
 		self.device = device
+		self.batch_size = batch_size
 		self.sound_length = sound_length
 		self.sampling_rate = sampling_rate
-	#音声の数を返す
+	#バッチサイズを返す
 	def __len__(self):
-		return len(self.file_list)
+		return self.batch_size
 	#前処理済み音声の、Tensor形式のデータを取得
 	def __getitem__(self,index):
 		#パスのリストから1つ取り出す
-		sound_path = self.file_list[index]
+		sound_path = self.file_list[index%len(self.file_list)]
 		#soundはnumpy.ndarrayで、時系列の音のデータが格納される
 		sound,_ = librosa.load(sound_path,sr=self.sampling_rate)
 		#Tensor形式に変換
@@ -55,6 +57,9 @@ class GAN_Sound_Dataset(data.Dataset):
 			start_index = torch.randint(0,(loaded_sound_length-self.sound_length)//2,(1,1))[0][0].item()
 			end_index = start_index + self.sound_length
 			sound = sound[start_index:end_index]
+		#この時点ではsound.shapeはtorch.Size([3, self.sound_length])となっているが、
+		#これをtorch.Size([3, 1, self.sound_length])に変換する
+		sound = sound.unsqueeze(0)
 		return sound
 
 #動作確認
