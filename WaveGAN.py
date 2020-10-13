@@ -8,15 +8,17 @@ from module.dataloader import *
 #データセットの、各データへのパスのフォーマット　make_datapath_listへの引数
 dataset_path = './dataset/**/*.wav'
 #バッチサイズ
-batch_size = 3
+batch_size = 64
 #入力する乱数の大きさ
 z_dim = 100
 #エポック数
-num_epochs = 10
+num_epochs = 1
 #optimizerに使う学習率
 lr = 0.0002
 #入力、出力する音声のサンプリングレート
 sampling_rate = 16000
+#Generatorの学習一回につき、Discriminatorを何回学習させるか
+D_updates_per_G_update = 5
 
 #GPUが使用可能かどうか確認
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -98,40 +100,45 @@ for epoch in range(num_epochs):
  		#discriminatorの学習
 		#-------------------------
 		#損失関数　E[本物の音声の判定結果]-E[偽音声の判定結果]+勾配制約項　を最大化するよう学習する
+		#Generatorの学習1回につき、D_updates_per_G_update回Discriminatorを学習する
  		#-------------------------
-		#ノイズを生成、zとする
-		z = torch.randn(minibatch_size,z_dim).to(device)
-		#generatorにノイズを入れ偽音声を生成、fake_soundとする
-		fake_sound = netG.forward(z)
-		#本物の音声を判定、結果をdに格納
-		d = netD.forward(real_sound)
-		#偽音声を判定、結果をd_に格納
-		d_ = netD.forward(fake_sound)
+		errD_loss_sum = 0#Discriminator学習時の、損失の平均を取る用の変数
+		for _ in range(D_updates_per_G_update):
+			#ノイズを生成、zとする
+			z = torch.randn(minibatch_size,z_dim).to(device)
+			#generatorにノイズを入れ偽音声を生成、fake_soundとする
+			fake_sound = netG.forward(z)
+			#本物の音声を判定、結果をdに格納
+			d = netD.forward(real_sound)
+			#偽音声を判定、結果をd_に格納
+			d_ = netD.forward(fake_sound)
 
-		#ミニバッチごとの、判定結果の平均をそれぞれとる
-		loss_real = d.mean()#-E[本物の音声の判定結果]を計算
-		loss_fake = d_.mean()#-E[偽音声の判定結果]を計算
-		#勾配制約項の計算
-		loss_gp = gradient_penalty(netD,real_sound.data,fake_sound.data,minibatch_size)
-		beta_gp = 10.0
-		#E[本物の音声の判定結果]-E[偽音声の判定結果]+勾配制約項 を計算
-		errD = -loss_real + loss_fake + beta_gp*loss_gp
-		#前のイテレーションで計算した傾きが残ってしまっているのでそれをリセットしておく
-		optimizerD.zero_grad()
-		#損失の傾きを計算して
-		errD.backward()
-		#実際に誤差伝搬を行う
-		optimizerD.step()
+			#ミニバッチごとの、判定結果の平均をそれぞれとる
+			loss_real = d.mean()#-E[本物の音声の判定結果]を計算
+			loss_fake = d_.mean()#-E[偽音声の判定結果]を計算
+			#勾配制約項の計算
+			loss_gp = gradient_penalty(netD,real_sound.data,fake_sound.data,minibatch_size)
+			beta_gp = 10.0
+			#E[本物の音声の判定結果]-E[偽音声の判定結果]+勾配制約項 を計算
+			errD = -loss_real + loss_fake + beta_gp*loss_gp
+			#前のイテレーションで計算した傾きが残ってしまっているのでそれをリセットしておく
+			optimizerD.zero_grad()
+			#損失の傾きを計算して
+			errD.backward()
+			#実際に誤差伝搬を行う
+			optimizerD.step()
+			#後で平均を取るためにlossを記録
+			errD_loss_sum += errD.item()
 
 		#学習状況を出力
 		if i % 50 == 0:
 			print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
 					% (epoch, num_epochs, i, len(dataloader),
-						errD.item(), errG.item()))
+						errD_loss_sum/D_updates_per_G_update, errG.item()))
 
 		#後でグラフに出力する用にlossを記録
 		G_losses.append(errG.item())
-		D_losses.append(errD.item())
+		D_losses.append(errD_loss_sum/D_updates_per_G_update)
 
 		iters += 1
 		#テスト用break
@@ -150,6 +157,11 @@ generating_num = 20#音声をいくつ出力したいか
 z = torch.randn(generating_num,z_dim).to(device)
 generated_sound = netG(z)
 for i,sound in enumerate(generated_sound):
+	print(type(sound))
+	print(sound.shape)
+	sound = sound.squeeze(0)
+	print(sound.shape)
+	sound = sound.to('cpu').detach().numpy().copy()
 	librosa.output.write_wav("./output/generated_sound_{}.wav".format(i+1),sound,sampling_rate)
 
 #学習にかかった時間を出力
