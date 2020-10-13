@@ -12,7 +12,7 @@ batch_size = 64
 #入力する乱数の大きさ
 z_dim = 100
 #エポック数
-num_epochs = 1
+num_epochs = 10
 #optimizerに使う学習率
 lr = 0.0002
 #入力、出力する音声のサンプリングレート

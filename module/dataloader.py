@@ -1,6 +1,6 @@
 #encoding:utf-8
 
-from importer import *
+from .importer import *
 
 def make_datapath_list(target_path):
 	#データセットを読み込む
