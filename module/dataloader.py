@@ -1,6 +1,6 @@
 #encoding:utf-8
 
-from .importer import *
+from importer import *
 
 def make_datapath_list(target_path):
 	#データセットを読み込む
@@ -65,14 +65,18 @@ class GAN_Sound_Dataset(data.Dataset):
 #動作確認
 # train_wav_list = make_datapath_list('../dataset/**/*.wav')
 
-# train_dataset = GAN_Sound_Dataset(file_list=train_wav_list,device="cpu")
+# batch_size = 3
+# dataset = GAN_Sound_Dataset(file_list=train_wav_list,device="cpu",batch_size=batch_size)
 
-# batch_size = 10
-# train_dataloader = torch.utils.data.DataLoader(train_dataset,batch_size=batch_size,shuffle=True)
+# dataloader = torch.utils.data.DataLoader(dataset,batch_size=batch_size,shuffle=True)
 
-# batch_iterator = iter(train_dataloader)
-# wav = next(batch_iterator)
-# print(wav.size())
+# batch_iterator = iter(dataloader)
+# sounds = next(batch_iterator)
+
+# for i,sound in enumerate(sounds,0):
+# 	sound = sound.squeeze(0)
+# 	sound = sound.to('cpu').detach().numpy().copy()
+# 	librosa.output.write_wav("../output/loaded_sound_{}.wav".format(i+1),sound,16000)
 
 
 
