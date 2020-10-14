@@ -64,7 +64,7 @@ D_losses = []
 iters = 0
 #学習過程を追うための、Generatorに入力するノイズ
 generating_num = 5#音声をいくつ出力したいか
-z_sample = torch.randn(generating_num,z_dim).to(device)
+z_sample = torch.Tensor(generating_num,z_dim).uniform_(-1,1).to(device)
 
 print("Starting Training")
 
@@ -93,7 +93,7 @@ for epoch in range(num_epochs):
 			#GPUが使えるならGPUへ転送
 			real_sound_for_D = real_sound_for_D.to(device)
 			#ノイズを生成、zとする
-			z = torch.Tensor(minibatch_size,z_dim).uniform_(-1,1)
+			z = torch.Tensor(minibatch_size,z_dim).uniform_(-1,1).to(device)
 			#generatorにノイズを入れ偽音声を生成、fake_soundとする
 			fake_sound = netG.forward(z)
 			#本物の音声を判定、結果をdに格納
@@ -134,7 +134,7 @@ for epoch in range(num_epochs):
 		for p in netD.parameters():
 			p.requires_grad = False
 		#ノイズを生成
-		z = torch.Tensor(minibatch_size,z_dim).uniform_(-1,1)
+		z = torch.Tensor(minibatch_size,z_dim).uniform_(-1,1).to(device)
 		#ノイズをgeneratorに入力、出力音声をfake_soundとする
 		fake_sound = netG.forward(z)
 		#出力音声fake_soundをdiscriminatorで推論　つまり偽音声の入力をする
