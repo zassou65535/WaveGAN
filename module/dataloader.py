@@ -62,6 +62,14 @@ class GAN_Sound_Dataset(data.Dataset):
 		sound = sound.unsqueeze(0)
 		return sound
 
+#生成された音声の出力用関数
+def save_sounds(path,sounds,sampling_rate):
+	for i,sound in enumerate(sounds):
+		sound = sound.squeeze(0)
+		sound = sound.to('cpu').detach().numpy().copy()
+		print(os.path.join(path,"generated_sound_{}.wav".format(i+1)))
+		sf.write(os.path.join(path,"generated_sound_{}.wav".format(i+1)),sound,sampling_rate)
+
 #動作確認
 # train_wav_list = make_datapath_list('../dataset/**/*.wav')
 
@@ -72,11 +80,7 @@ class GAN_Sound_Dataset(data.Dataset):
 
 # batch_iterator = iter(dataloader)
 # sounds = next(batch_iterator)
-
-# for i,sound in enumerate(sounds,0):
-# 	sound = sound.squeeze(0)
-# 	sound = sound.to('cpu').detach().numpy().copy()
-# 	librosa.output.write_wav("../output/loaded_sound_{}.wav".format(i+1),sound,16000)
+# save_sounds(sounds,16000)
 
 
 

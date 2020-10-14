@@ -9,12 +9,12 @@ from module.dataloader import *
 dataset_path = './dataset/**/*.wav'
 #バッチサイズ
 batch_size = 64
-#入力する乱数の大きさ
+#入力する乱数の次元の大きさ
 z_dim = 100
 #エポック数
 num_epochs = 10
 #optimizerに使う学習率
-lr = 0.0002
+lr = 0.0001
 #入力、出力する音声のサンプリングレート
 sampling_rate = 16000
 #Generatorの学習一回につき、Discriminatorを何回学習させるか
@@ -62,6 +62,9 @@ optimizerG = optim.Adam(netG.parameters(),lr=lr,betas=(beta1,beta2))
 G_losses = []
 D_losses = []
 iters = 0
+#学習過程を追うための、Generatorに入力するノイズ
+generating_num = 5#音声をいくつ出力したいか
+z_sample = torch.randn(generating_num,z_dim).to(device)
 
 print("Starting Training")
 
@@ -70,35 +73,7 @@ t_epoch_start = time.time()
 #エポックごとのループ
 for epoch in range(num_epochs):
 	#データセットからbatch_size個ずつ取り出し学習
-	for i,real_sound_for_G in enumerate(dataloader_for_G, 0):
-		#実際に取り出せた音声データの数
-		minibatch_size = real_sound_for_G.shape[0]
-		#取り出したミニバッチ数が1の場合勾配を求める過程でエラーとなるので処理を飛ばす
-		if(minibatch_size==1): continue
-		#GPUが使えるならGPUへ転送
-		real_sound = real_sound_for_G.to(device)
-
-		#-------------------------
- 		#Generatorの学習
-		#-------------------------
-		#損失関数　-E[偽音声の判定結果]　を最大化するよう学習する
- 		#-------------------------
-		#ノイズを生成
-		z = torch.randn(batch_size,z_dim).to(device)
-		#ノイズをgeneratorに入力、出力音声をfake_soundとする
-		fake_sound = netG.forward(z)
-		#出力音声fake_soundをdiscriminatorで推論　つまり偽音声の入力をする
-		d_ = netD.forward(fake_sound)
-
-		# WGAN_GPではミニバッチ内の推論結果全てに対し平均を取り、それを誤差伝搬に使う
-		errG = -d_.mean()#E[偽音声の判定結果]を計算
-		#前のイテレーションで計算した傾きが残ってしまっているのでそれをリセットしておく
-		optimizerG.zero_grad()
-		#損失の傾きを計算して
-		errG.backward()
-		#実際に誤差伝搬を行う
-		optimizerG.step()
-
+	for generator_i,real_sound_for_G in enumerate(dataloader_for_G, 0):
 		#-------------------------
  		#discriminatorの学習
 		#-------------------------
@@ -106,16 +81,25 @@ for epoch in range(num_epochs):
 		#Generatorの学習1回につき、D_updates_per_G_update回Discriminatorを学習する
  		#-------------------------
 		errD_loss_sum = 0#Discriminator学習時の、損失の平均を取る用の変数
+		#discriminatorが誤差伝搬をできるように設定する
+		for p in netD.parameters():
+			p.requires_grad = True
 		for discriminator_i,real_sound_for_D in enumerate(dataloader_for_D, 0):
 			if(discriminator_i==D_updates_per_G_update): break
+			#実際に取り出せた音声データの数
+			minibatch_size = real_sound_for_D.shape[0]
+			#取り出したミニバッチ数が1の場合勾配を求める過程でエラーとなるので処理を飛ばす
+			if(minibatch_size==1): continue
+			#GPUが使えるならGPUへ転送
+			real_sound_for_D = real_sound_for_D.to(device)
 			#ノイズを生成、zとする
-			z = torch.randn(minibatch_size,z_dim).to(device)
+			z = torch.Tensor(minibatch_size,z_dim).uniform_(-1,1)
 			#generatorにノイズを入れ偽音声を生成、fake_soundとする
 			fake_sound = netG.forward(z)
 			#本物の音声を判定、結果をdに格納
 			d = netD.forward(real_sound_for_D)
 			#偽音声を判定、結果をd_に格納
-			d_ = netD.forward(real_sound_for_D)
+			d_ = netD.forward(fake_sound)
 
 			#ミニバッチごとの、判定結果の平均をそれぞれとる
 			loss_real = d.mean()#-E[本物の音声の判定結果]を計算
@@ -133,12 +117,51 @@ for epoch in range(num_epochs):
 			optimizerD.step()
 			#後で平均を取るためにlossを記録
 			errD_loss_sum += errD.item()
+		
+		#-------------------------
+ 		#Generatorの学習
+		#-------------------------
+		#損失関数　-E[偽音声の判定結果]　を最大化するよう学習する
+ 		#-------------------------
+		#実際に取り出せた音声データの数
+		minibatch_size = real_sound_for_G.shape[0]
+		#取り出したミニバッチ数が1の場合勾配を求める過程でエラーとなるので処理を飛ばす
+		if(minibatch_size==1): continue
+		#GPUが使えるならGPUへ転送
+		real_sound_for_G = real_sound_for_G.to(device)
+
+		#一時的にdiscriminatorの誤差伝搬をしないように設定
+		for p in netD.parameters():
+			p.requires_grad = False
+		#ノイズを生成
+		z = torch.Tensor(minibatch_size,z_dim).uniform_(-1,1)
+		#ノイズをgeneratorに入力、出力音声をfake_soundとする
+		fake_sound = netG.forward(z)
+		#出力音声fake_soundをdiscriminatorで推論　つまり偽音声の入力をする
+		d_ = netD.forward(fake_sound)
+
+		# WGAN_GPではミニバッチ内の推論結果全てに対し平均を取り、それを誤差伝搬に使う
+		errG = -d_.mean()#E[偽音声の判定結果]を計算
+		#前のイテレーションで計算した傾きが残ってしまっているのでそれをリセットしておく
+		optimizerG.zero_grad()
+		#損失の傾きを計算して
+		errG.backward()
+		#実際に誤差伝搬を行う
+		optimizerG.step()
 
 		#学習状況を出力
-		if i % 50 == 0:
+		if (iters%2==0):
 			print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
-					% (epoch, num_epochs, i, len(dataloader_for_G),
+					% (epoch, num_epochs, generator_i, len(dataloader_for_G),
 						errD_loss_sum/D_updates_per_G_update, errG.item()))
+			#出力用ディレクトリがなければ作成
+			output_dir = "./output/generated_iter_{}".format(iters)
+			if not os.path.exists(output_dir):
+				os.makedirs(output_dir)
+			#生成された音声の出力
+			generated_sound = netG(z_sample)
+			save_sounds(output_dir,generated_sound,sampling_rate)
+			
 
 		#後でグラフに出力する用にlossを記録
 		G_losses.append(errG.item())
@@ -152,18 +175,13 @@ for epoch in range(num_epochs):
 #実行結果の出力
 #-------------------------
 
-#ディレクトリ「./output」がなければ作成
-if not os.path.exists("./output"):
-	os.makedirs("./output")
-
 #生成された音声の出力
-generating_num = 20#音声をいくつ出力したいか
-z = torch.randn(generating_num,z_dim).to(device)
-generated_sound = netG(z)
-for i,sound in enumerate(generated_sound):
-	sound = sound.squeeze(0)
-	sound = sound.to('cpu').detach().numpy().copy()
-	librosa.output.write_wav("./output/generated_sound_{}.wav".format(i+1),sound,sampling_rate)
+#出力用ディレクトリがなければ作成
+output_dir = "./output/final_results"
+if not os.path.exists(output_dir):
+	os.makedirs(output_dir)
+generated_sound = netG(z_sample)
+save_sounds(output_dir,generated_sound,sampling_rate)
 
 #学習にかかった時間を出力
 #学習終了時の時間を記録
