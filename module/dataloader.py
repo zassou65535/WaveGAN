@@ -15,26 +15,39 @@ def make_datapath_list(target_path):
 
 class GAN_Sound_Dataset(data.Dataset):
 	#音声のデータセットクラス
-	def __init__(self,file_list,device,batch_size,sound_length=16384,sampling_rate=16000):
+	def __init__(self,file_list,device,batch_size,sound_length=16384,sampling_rate=16000,dat_threshold=20):
 		#file_list     : 読み込む音声のパスのリスト
 		#device        : gpuで処理するかどうかを決める
 		#batch_size    : バッチサイズ
 		#sound_length  : 学習に用いる音の長さ
 		#sampling_rate : 音声を読み込む際のサンプリングレート
+		#dat_threshold : データセットのファイルの総数がdat_threshold以下ならファイルの内容を保持する
 		self.file_list = file_list
 		self.device = device
 		self.batch_size = batch_size
 		self.sound_length = sound_length
 		self.sampling_rate = sampling_rate
+		self.dat_threshold = dat_threshold
+		#データセットのファイルの総数がdat_threshold以下ならファイルの内容を保持する
+		if(len(self.file_list)<=dat_threshold):
+			self.file_contents = []
+			for file_path in self.file_list:
+				#soundはnumpy.ndarrayで、時系列の音のデータが格納される
+				sound,_ = librosa.load(file_path,sr=self.sampling_rate)
+				self.file_contents.append(sound)
+
 	#バッチサイズを返す
 	def __len__(self):
 		return self.batch_size
 	#前処理済み音声の、Tensor形式のデータを取得
 	def __getitem__(self,index):
-		#パスのリストから1つ取り出す
-		sound_path = self.file_list[index%len(self.file_list)]
-		#soundはnumpy.ndarrayで、時系列の音のデータが格納される
-		sound,_ = librosa.load(sound_path,sr=self.sampling_rate)
+		if(len(self.file_list)<=self.dat_threshold):
+			sound = self.file_contents[index%len(self.file_list)]
+		else:
+			#パスのリストから1つ取り出す
+			sound_path = self.file_list[index%len(self.file_list)]
+			#soundはnumpy.ndarrayで、時系列の音のデータが格納される
+			sound,_ = librosa.load(sound_path,sr=self.sampling_rate)
 		#Tensor形式に変換
 		sound = (torch.from_numpy(sound.astype(np.float32)).clone()).to(self.device)
 		#時系列の音のデータの内、大きさが1より大きい要素が存在するなら、それが1になるよう正規化
