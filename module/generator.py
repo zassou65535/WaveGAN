@@ -11,19 +11,44 @@ class Generator(nn.Module):
 		self.full_connection_1 = nn.Linear(z_dim,256*model_size)
 
 		self.layer_1 = nn.Sequential(
-				Transpose1dLayer(16*model_size,8*model_size,kernel_size=25,stride=1,upsample=4),
+				nn.ConvTranspose1d(in_channels=16*model_size,\
+									out_channels=8*model_size,\
+									kernel_size=25,\
+									stride=4,\
+									padding=11,\
+									output_padding=1),
 				nn.ReLU(inplace=True))
 		self.layer_2 = nn.Sequential(
-				Transpose1dLayer( 8*model_size,4*model_size,kernel_size=25,stride=1,upsample=4),
+				nn.ConvTranspose1d(in_channels=  8*model_size,\
+									out_channels=4*model_size,\
+									kernel_size=25,\
+									stride=4,\
+									padding=11,\
+									output_padding=1),
 				nn.ReLU(inplace=True))
 		self.layer_3 = nn.Sequential(
-				Transpose1dLayer( 4*model_size,2*model_size,kernel_size=25,stride=1,upsample=4),
+				nn.ConvTranspose1d(in_channels=  4*model_size,\
+									out_channels=2*model_size,\
+									kernel_size=25,\
+									stride=4,\
+									padding=11,\
+									output_padding=1),
 				nn.ReLU(inplace=True))
 		self.layer_4 = nn.Sequential(
-				Transpose1dLayer( 2*model_size,  model_size,kernel_size=25,stride=1,upsample=4),
+				nn.ConvTranspose1d(in_channels=  2*model_size,\
+									out_channels=  model_size,\
+									kernel_size=25,\
+									stride=4,\
+									padding=11,\
+									output_padding=1),
 				nn.ReLU(inplace=True))
 		self.layer_5 = nn.Sequential(
-				Transpose1dLayer(   model_size,           1,kernel_size=25,stride=1,upsample=4),
+				nn.ConvTranspose1d(in_channels=model_size,\
+									out_channels=1,\
+									kernel_size=25,\
+									stride=4,\
+									padding=11,\
+									output_padding=1),
 				nn.Tanh())
 
 	def forward(self, x):
