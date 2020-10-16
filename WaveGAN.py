@@ -12,7 +12,7 @@ batch_size = 64
 #入力する乱数の次元の大きさ
 z_dim = 100
 #エポック数
-num_epochs = 10
+num_epochs = 1000
 #optimizerに使う学習率
 lr = 0.0001
 #入力、出力する音声のサンプリングレート
@@ -81,9 +81,6 @@ for epoch in range(num_epochs):
 		#Generatorの学習1回につき、D_updates_per_G_update回Discriminatorを学習する
  		#-------------------------
 		errD_loss_sum = 0#Discriminator学習時の、損失の平均を取る用の変数
-		#discriminatorが誤差伝搬をできるように設定する
-		for p in netD.parameters():
-			p.requires_grad = True
 		for discriminator_i,real_sound_for_D in enumerate(dataloader_for_D, 0):
 			if(discriminator_i==D_updates_per_G_update): break
 			#実際に取り出せた音声データの数
@@ -97,13 +94,13 @@ for epoch in range(num_epochs):
 			#generatorにノイズを入れ偽音声を生成、fake_soundとする
 			fake_sound = netG.forward(z)
 			#本物の音声を判定、結果をdに格納
-			d = netD.forward(real_sound_for_D)
+			d_real = netD.forward(real_sound_for_D)
 			#偽音声を判定、結果をd_に格納
-			d_ = netD.forward(fake_sound)
+			d_fake = netD.forward(fake_sound)
 
 			#ミニバッチごとの、判定結果の平均をそれぞれとる
-			loss_real = d.mean()#-E[本物の音声の判定結果]を計算
-			loss_fake = d_.mean()#-E[偽音声の判定結果]を計算
+			loss_real = d_real.mean()#-E[本物の音声の判定結果]を計算
+			loss_fake = d_fake.mean()#-E[偽音声の判定結果]を計算
 			#勾配制約項の計算
 			loss_gp = gradient_penalty(netD,real_sound_for_D.data,fake_sound.data,minibatch_size)
 			beta_gp = 10.0
@@ -129,19 +126,15 @@ for epoch in range(num_epochs):
 		if(minibatch_size==1): continue
 		#GPUが使えるならGPUへ転送
 		real_sound_for_G = real_sound_for_G.to(device)
-
-		#一時的にdiscriminatorの誤差伝搬をしないように設定
-		for p in netD.parameters():
-			p.requires_grad = False
 		#ノイズを生成
 		z = torch.Tensor(minibatch_size,z_dim).uniform_(-1,1).to(device)
 		#ノイズをgeneratorに入力、出力音声をfake_soundとする
 		fake_sound = netG.forward(z)
 		#出力音声fake_soundをdiscriminatorで推論　つまり偽音声の入力をする
-		d_ = netD.forward(fake_sound)
+		d_fake = netD.forward(fake_sound)
 
 		# WGAN_GPではミニバッチ内の推論結果全てに対し平均を取り、それを誤差伝搬に使う
-		errG = -d_.mean()#E[偽音声の判定結果]を計算
+		errG = -d_fake.mean()#E[偽音声の判定結果]を計算
 		#前のイテレーションで計算した傾きが残ってしまっているのでそれをリセットしておく
 		optimizerG.zero_grad()
 		#損失の傾きを計算して
@@ -150,7 +143,7 @@ for epoch in range(num_epochs):
 		optimizerG.step()
 
 		#学習状況を出力
-		if (iters%2==0):
+		if (iters%100==0):
 			print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
 					% (epoch, num_epochs, generator_i, len(dataloader_for_G),
 						errD_loss_sum/D_updates_per_G_update, errG.item()))
