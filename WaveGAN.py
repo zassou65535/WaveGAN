@@ -12,7 +12,7 @@ batch_size = 64
 #入力する乱数の次元の大きさ
 z_dim = 100
 #エポック数
-num_epochs = 15000
+num_epochs = 15001
 #optimizerに使う学習率
 lr = 0.0001
 #入力、出力する音声のサンプリングレート
@@ -20,7 +20,7 @@ sampling_rate = 16000
 #Generatorの学習一回につき、Discriminatorを何回学習させるか
 D_updates_per_G_update = 5
 #generate_sounds_interval回イテレーションを行うごとに学習状況を出力する
-generate_sounds_interval = 1000
+generate_sounds_interval = 2000
 
 #GPUが使用可能かどうか確認
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
