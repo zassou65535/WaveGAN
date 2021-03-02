@@ -150,7 +150,7 @@ for epoch in range(num_epochs):
 					% (epoch, num_epochs,
 						errD_loss_sum/D_updates_per_G_update, errG.item()))
 			#出力用ディレクトリがなければ作成
-			output_dir = "./output/generated_iter_{}".format(iters)
+			output_dir = "./output/train/generated_iter_{}".format(iters)
 			if not os.path.exists(output_dir):
 				os.makedirs(output_dir)
 			#生成された音声の出力
@@ -172,20 +172,20 @@ for epoch in range(num_epochs):
 
 #生成された音声の出力
 #出力用ディレクトリがなければ作成
-output_dir = "./output/final_results"
+output_dir = "./output/train/final_results"
 if not os.path.exists(output_dir):
 	os.makedirs(output_dir)
 generated_sound = netG(z_sample)
 save_sounds(output_dir,generated_sound,sampling_rate)
 
 #学習済みGeneratorのモデル（CPU向け）を出力
-torch.save(netG.to('cpu').state_dict(),"./output/trained_model_cpu.pth")
+torch.save(netG.to('cpu').state_dict(),"./output/generator_trained_model_cpu.pth")
 
 #学習にかかった時間を出力
 #学習終了時の時間を記録
 t_epoch_finish = time.time()
 total_time = t_epoch_finish - t_epoch_start
-with open('./output/time.txt', mode='w') as f:
+with open('./output/train/time.txt', mode='w') as f:
 	f.write("total_time: {:.4f} sec.\n".format(total_time))
 	f.write("dataset size: {}\n".format(len(train_sound_list)))
 	f.write("num_epochs: {}\n".format(num_epochs))
@@ -200,7 +200,7 @@ plt.plot(D_losses,label="D")
 plt.xlabel("iterations")
 plt.ylabel("Loss")
 plt.legend()
-plt.savefig('./output/loss.png')
+plt.savefig('./output/train/loss.png')
 
 print("data generated.")
 
