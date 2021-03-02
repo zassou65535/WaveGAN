@@ -10,12 +10,12 @@ python 3.7.1
 ## プログラム
 * `WaveGAN_train.py`は学習を実行し、学習の過程と学習結果のwavファイルを出力するプログラムです。 
 	* 学習においては各イテレーションごとにデータセットから音声(`.wav`形式)を選び出し、約4秒分ランダムな箇所から切り取って学習します。 
-* `WaveGAN_inference.py`は`WaveGAN_train.py`が出力した学習結果(重み)をGeneratorに読み込み推論を実行、生成画像を出力するプログラムです。 
+* `WaveGAN_inference.py`は`WaveGAN_train.py`が出力した学習結果(重み)をGeneratorに読み込み推論を実行、音声データを出力するプログラムです。 
 	* 出力されるwavファイルは約4秒の長さの音声です。 
 
 ## 使い方
 1. `WaveGAN_train.py`のあるディレクトリに`./dataset`ディレクトリを作成します
-1. `./dataset`ディレクトリに、学習に使いたい音声ファイルを`./dataset/**/*.wav`という形式で好きな数入れます(画像のファイル形式はpng)
+1. `./dataset`ディレクトリに、学習に使いたい音声ファイルを`./dataset/**/*.wav`という形式で好きな数入れます
 1. `WaveGAN_train.py`の置いてあるディレクトリで`python WaveGAN_train.py`を実行して学習を開始します
 	* 学習の過程が`./output/train/`以下に出力されます
 	* 学習結果が`./output/generator_trained_model_cpu.pth`として出力されます
