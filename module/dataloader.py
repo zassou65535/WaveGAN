@@ -5,7 +5,7 @@ from .importer import *
 def make_datapath_list(target_path):
 	#データセットを読み込む
 	path_list = []#データセットのファイルパスのリストを作り、戻り値とする
-	for path in glob.glob(target_path):
+	for path in glob.glob(target_path,recursive=True):
 		path_list.append(path)
 		##読み込むパスを全部表示　必要ならコメントアウトを外す
 		#print(path)
