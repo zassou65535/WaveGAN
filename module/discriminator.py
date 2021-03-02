@@ -34,8 +34,13 @@ class Discriminator(nn.Module):
 				nn.LeakyReLU(0.2,inplace=True),
 				PhaseShuffle(shift_factor)
 				)
+		self.layer_6 = nn.Sequential(
+				nn.Conv1d(16*model_size,32*model_size,kernel_size=25,stride=4,padding=11),
+				nn.LeakyReLU(0.2,inplace=True),
+				PhaseShuffle(shift_factor)
+				)
 
-		self.full_connection_1 = nn.Linear(256*model_size,1)
+		self.full_connection_1 = nn.Linear(512*model_size,1)
 
 	def forward(self, x):
 		x = self.layer_1(x)
@@ -43,7 +48,8 @@ class Discriminator(nn.Module):
 		x = self.layer_3(x)
 		x = self.layer_4(x)
 		x = self.layer_5(x)
-		x = x.view(-1,256*self.model_size)
+		x = self.layer_6(x)
+		x = x.view(-1,512*self.model_size)
 		output = self.full_connection_1(x)
 		return output
 

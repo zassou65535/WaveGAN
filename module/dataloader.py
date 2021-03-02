@@ -15,7 +15,7 @@ def make_datapath_list(target_path):
 
 class GAN_Sound_Dataset(data.Dataset):
 	#音声のデータセットクラス
-	def __init__(self,file_list,device,batch_size,sound_length=16384,sampling_rate=16000,dat_threshold=20):
+	def __init__(self,file_list,device,batch_size,sound_length=65536,sampling_rate=16000,dat_threshold=20):
 		#file_list     : 読み込む音声のパスのリスト
 		#device        : gpuで処理するかどうかを決める
 		#batch_size    : バッチサイズ

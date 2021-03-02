@@ -6,13 +6,13 @@ from module.generator import *
 from module.dataloader import *
 
 #データセットの、各データへのパスのフォーマット　make_datapath_listへの引数
-dataset_path = './dataset/**/*.wav'
+dataset_path = './dataset/piano/**/*.wav'
 #バッチサイズ
 batch_size = 64
 #入力する乱数の次元の大きさ
 z_dim = 100
 #エポック数
-num_epochs = 15001
+num_epochs = 15000
 #optimizerに使う学習率
 lr = 0.0001
 #入力、出力する音声のサンプリングレート
@@ -23,7 +23,7 @@ D_updates_per_G_update = 5
 generate_sounds_interval = 2000
 
 #GPUが使用可能かどうか確認
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 print("device:",device)
 
 #訓練データの読み込み、データセット作成
@@ -146,8 +146,8 @@ for epoch in range(num_epochs):
 
 		#学習状況を出力
 		if (iters%generate_sounds_interval==0):
-			print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
-					% (epoch, num_epochs, generator_i, len(dataloader_for_G),
+			print('[%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
+					% (epoch, num_epochs,
 						errD_loss_sum/D_updates_per_G_update, errG.item()))
 			#出力用ディレクトリがなければ作成
 			output_dir = "./output/generated_iter_{}".format(iters)
