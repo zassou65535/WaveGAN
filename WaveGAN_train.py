@@ -6,7 +6,7 @@ from module.generator import *
 from module.dataloader import *
 
 #データセットの、各データへのパスのフォーマット　make_datapath_listへの引数
-dataset_path = './dataset/piano/**/*.wav'
+dataset_path = './dataset/**/*.wav'
 #バッチサイズ
 batch_size = 64
 #入力する乱数の次元の大きさ
@@ -23,7 +23,7 @@ D_updates_per_G_update = 5
 generate_sounds_interval = 2000
 
 #GPUが使用可能かどうか確認
-device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("device:",device)
 
 #訓練データの読み込み、データセット作成
