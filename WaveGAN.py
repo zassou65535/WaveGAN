@@ -178,6 +178,9 @@ if not os.path.exists(output_dir):
 generated_sound = netG(z_sample)
 save_sounds(output_dir,generated_sound,sampling_rate)
 
+#学習済みGeneratorのモデル（CPU向け）を出力
+torch.save(netG.to('cpu').state_dict(),"./output/trained_model_cpu.pth")
+
 #学習にかかった時間を出力
 #学習終了時の時間を記録
 t_epoch_finish = time.time()
