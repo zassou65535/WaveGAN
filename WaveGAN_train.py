@@ -144,21 +144,6 @@ for epoch in range(num_epochs):
 		#実際に誤差伝搬を行う
 		optimizerG.step()
 
-		#学習状況を出力
-		if (epoch%generate_sounds_interval==0):
-			print('[%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
-					% (epoch, num_epochs,
-						errD_loss_sum/D_updates_per_G_update, errG.item()))
-			#出力用ディレクトリがなければ作成
-			output_dir = "./output/train/generated_epoch_{}".format(epoch)
-			if not os.path.exists(output_dir):
-				os.makedirs(output_dir)
-			#生成された音声の出力
-			with torch.no_grad():
-				generated_sound = netG(z_sample)
-				save_sounds(output_dir,generated_sound,sampling_rate)
-			
-
 		#後でグラフに出力する用にlossを記録
 		G_losses.append(errG.item())
 		D_losses.append(errD_loss_sum/D_updates_per_G_update)
@@ -166,18 +151,24 @@ for epoch in range(num_epochs):
 		iters += 1
 		#テスト用break
 		#break
+	
+	#学習状況を出力
+	if (epoch%generate_sounds_interval==0 or epoch==num_epochs-1):
+		print('[%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
+				% (epoch, num_epochs,
+					errD_loss_sum/D_updates_per_G_update, errG.item()))
+		#出力用ディレクトリがなければ作成
+		output_dir = "./output/train/generated_epoch_{}".format(epoch)
+		if not os.path.exists(output_dir):
+			os.makedirs(output_dir)
+		#生成された音声の出力
+		with torch.no_grad():
+			generated_sound = netG(z_sample)
+			save_sounds(output_dir,generated_sound,sampling_rate)
 
 #-------------------------
 #実行結果の出力
 #-------------------------
-
-#生成された音声の出力
-#出力用ディレクトリがなければ作成
-output_dir = "./output/train/final_results"
-if not os.path.exists(output_dir):
-	os.makedirs(output_dir)
-generated_sound = netG(z_sample)
-save_sounds(output_dir,generated_sound,sampling_rate)
 
 #学習済みGeneratorのモデル（CPU向け）を出力
 torch.save(netG.to('cpu').state_dict(),"./output/generator_trained_model_cpu.pth")
