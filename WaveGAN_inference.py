@@ -22,5 +22,9 @@ netG.eval()
 noise = torch.Tensor(sample_size,z_dim).uniform_(-1,1)
 #generatorへ入力、出力画像を得る
 generated_sound = netG(noise)
+#出力用ディレクトリがなければ作成
+output_dir = "./output/inference"
+if not os.path.exists(output_dir):
+	os.makedirs(output_dir)
 #音声ファイルの出力
 save_sounds("./output/inference/",generated_sound,sampling_rate)
