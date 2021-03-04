@@ -19,8 +19,8 @@ lr = 0.0001
 sampling_rate = 16000
 #Generatorの学習一回につき、Discriminatorを何回学習させるか
 D_updates_per_G_update = 5
-#generate_sounds_interval回イテレーションを行うごとに学習状況を出力する
-generate_sounds_interval = 2000
+#generate_sounds_interval[epoch]学習を行うごとに学習状況を出力する
+generate_sounds_interval = 50
 
 #GPUが使用可能かどうか確認
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -145,17 +145,18 @@ for epoch in range(num_epochs):
 		optimizerG.step()
 
 		#学習状況を出力
-		if (iters%generate_sounds_interval==0):
+		if (epoch%generate_sounds_interval==0):
 			print('[%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
 					% (epoch, num_epochs,
 						errD_loss_sum/D_updates_per_G_update, errG.item()))
 			#出力用ディレクトリがなければ作成
-			output_dir = "./output/train/generated_iter_{}".format(iters)
+			output_dir = "./output/train/generated_epoch_{}".format(epoch)
 			if not os.path.exists(output_dir):
 				os.makedirs(output_dir)
 			#生成された音声の出力
-			generated_sound = netG(z_sample)
-			save_sounds(output_dir,generated_sound,sampling_rate)
+			with torch.no_grad():
+				generated_sound = netG(z_sample)
+				save_sounds(output_dir,generated_sound,sampling_rate)
 			
 
 		#後でグラフに出力する用にlossを記録
