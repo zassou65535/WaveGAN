@@ -170,9 +170,6 @@ for epoch in range(num_epochs):
 #実行結果の出力
 #-------------------------
 
-#学習済みGeneratorのモデル（CPU向け）を出力
-torch.save(netG.to('cpu').state_dict(),"./output/generator_trained_model_cpu.pth")
-
 #学習にかかった時間を出力
 #学習終了時の時間を記録
 t_epoch_finish = time.time()
@@ -182,6 +179,9 @@ with open('./output/train/time.txt', mode='w') as f:
 	f.write("dataset size: {}\n".format(len(train_sound_list)))
 	f.write("num_epochs: {}\n".format(num_epochs))
 	f.write("batch_size: {}\n".format(batch_size))
+
+#学習済みGeneratorのモデル（CPU向け）を出力
+torch.save(netG.to('cpu').state_dict(),"./output/generator_trained_model_cpu.pth")
 
 #lossのグラフを出力
 plt.clf()
