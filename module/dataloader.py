@@ -15,7 +15,7 @@ def make_datapath_list(target_path):
 
 class GAN_Sound_Dataset(data.Dataset):
 	#音声のデータセットクラス
-	def __init__(self,file_list,device,batch_size,sound_length=65536,sampling_rate=16000,dat_threshold=20):
+	def __init__(self,file_list,device,batch_size,sound_length=65536,sampling_rate=16000,dat_threshold=1100):
 		#file_list     : 読み込む音声のパスのリスト
 		#device        : gpuで処理するかどうかを決める
 		#batch_size    : バッチサイズ
@@ -36,9 +36,9 @@ class GAN_Sound_Dataset(data.Dataset):
 				sound,_ = librosa.load(file_path,sr=self.sampling_rate)
 				self.file_contents.append(sound)
 
-	#バッチサイズを返す
+	#バッチサイズ, ファイルの総数のうち大きい方を返す
 	def __len__(self):
-		return self.batch_size
+		return max(self.batch_size, len(self.file_list))
 	#前処理済み音声の、Tensor形式のデータを取得
 	def __getitem__(self,index):
 		if(len(self.file_list)<=self.dat_threshold):
