@@ -77,10 +77,12 @@ class GAN_Sound_Dataset(data.Dataset):
 
 #生成された音声の出力用関数
 def save_sounds(path,sounds,sampling_rate):
+	now_time = time.time()
 	for i,sound in enumerate(sounds):
 		sound = sound.squeeze(0)
 		sound = sound.to('cpu').detach().numpy().copy()
-		file_path = os.path.join(path,"generated_sound_{}.wav".format(i+1))
+		hash_string = hashlib.md5(str(now_time).encode()).hexdigest()
+		file_path = os.path.join(path,f"generated_sound_{i}_{hash_string}.wav")
 		print(file_path)
 		sf.write(file_path,sound,sampling_rate,format="WAV")
 
