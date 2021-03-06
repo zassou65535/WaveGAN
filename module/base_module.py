@@ -9,7 +9,6 @@ class PhaseShuffle(nn.Module):
 		self.n = n#どれだけずらすかの範囲は論文内では[-n,n]と定義されている
 
 	def forward(self, x):
-		x_ = x.clone()
 		#nが0であれば、PhaseShuffleをそもそもしないのと同等
 		if self.n == 0:
 			return x
