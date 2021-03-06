@@ -80,8 +80,9 @@ def save_sounds(path,sounds,sampling_rate):
 	for i,sound in enumerate(sounds):
 		sound = sound.squeeze(0)
 		sound = sound.to('cpu').detach().numpy().copy()
-		print(os.path.join(path,"generated_sound_{}.wav".format(i+1)))
-		sf.write(os.path.join(path,"generated_sound_{}.wav".format(i+1)),sound,sampling_rate)
+		file_path = os.path.join(path,"generated_sound_{}.wav".format(i+1))
+		print(file_path)
+		sf.write(file_path,sound,sampling_rate,format="WAV")
 
 #動作確認
 # train_wav_list = make_datapath_list('../dataset/**/*.wav')
