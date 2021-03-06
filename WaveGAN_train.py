@@ -10,9 +10,9 @@ dataset_path = './dataset/**/*.wav'
 #バッチサイズ
 batch_size = 16
 #入力する乱数の次元の大きさ
-z_dim = 100
+z_dim = 20
 #エポック数
-num_epochs = 160
+num_epochs = 200
 #optimizerに使う学習率
 lr = 0.0001
 #入力、出力する音声のサンプリングレート
