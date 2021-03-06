@@ -4,7 +4,7 @@ from .importer import *
 from .base_module import *
 
 class Generator(nn.Module):
-	def __init__(self,model_size=64,z_dim=20):
+	def __init__(self,model_size=32,z_dim=20):
 		super().__init__()
 		self.model_size = model_size #論文内ではdとされている値
 

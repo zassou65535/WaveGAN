@@ -4,7 +4,7 @@ from .importer import *
 from .base_module import *
 
 class Discriminator(nn.Module):
-	def __init__(self,model_size=64,shift_factor=2):
+	def __init__(self,model_size=32,shift_factor=2):
 		super().__init__()
 		self.model_size = model_size #論文内ではdとされている値
 		self.shift_factor = shift_factor  #n　どれだけ揺さぶりをかけるか
