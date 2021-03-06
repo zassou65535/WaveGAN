@@ -8,7 +8,7 @@ from module.dataloader import *
 #出力する音声ファイルの数
 sample_size = 16
 #入力する乱数の次元の大きさ
-z_dim = 100
+z_dim = 20
 #扱う音声のサンプリングレート
 sampling_rate = 16000
 
