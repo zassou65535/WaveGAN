@@ -38,7 +38,7 @@ def gradient_penalty(netD,real,fake,batch_size,gamma=1):
 	device = real.device
 	#requires_gradが有効なTensorに対してはbackwardメソッドが呼べて、自動的に微分を計算できる
 	alpha = torch.rand(batch_size,1,1,requires_grad=True).to(device)
-	#本物画像と偽画像を任意の割合で混ぜ合わせる
+	#本物と偽物をランダムな割合で混ぜ合わせる
 	x = alpha*real + (1-alpha)*fake
 	#それをdiscriminatorに入れ、結果をd_とする
 	d_ = netD.forward(x)
