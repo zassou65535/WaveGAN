@@ -1,8 +1,8 @@
 # WaveGAN
 ## 概要
 機械学習で音声を生成する手法「WaveGAN」の実装です。  
-参考資料:https://arxiv.org/abs/1802.04208
-解説記事:https://qiita.com/zassou65535/items/5a9d5ef44dedea94be8a
+参考資料:https://arxiv.org/abs/1802.04208  
+解説記事:https://qiita.com/zassou65535/items/5a9d5ef44dedea94be8a  
 
 ## 想定環境
 python 3.7.1  
