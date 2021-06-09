@@ -6,7 +6,6 @@ import os.path as osp
 import random
 import numpy as np
 import json
-from PIL import Image
 from tqdm import tqdm
 import matplotlib as mpl
 mpl.use('Agg')# AGG(Anti-Grain Geometry engine)
@@ -23,7 +22,6 @@ from torch.autograd import Function
 import torch.nn.functional as F
 
 import xml.etree.ElementTree as ET
-#import cv2
 from itertools import product
 from math import sqrt
 import time
