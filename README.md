@@ -5,6 +5,7 @@
 解説記事:https://qiita.com/zassou65535/items/5a9d5ef44dedea94be8a  
 
 ## 想定環境
+Ubuntu20.04  
 python 3.7.1  
 `pip install -r requirements.txt`で環境を揃えることができます。 
 
