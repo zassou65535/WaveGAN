@@ -6,7 +6,7 @@ chardet==3.0.4
 cycler==0.10.0
 decorator==4.4.2
 idna==2.10
-joblib==0.17.0
+joblib
 kiwisolver==1.1.0
 librosa==0.8.0
 llvmlite==0.31.0
