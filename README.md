@@ -7,6 +7,8 @@
 ## 想定環境
 Ubuntu20.04  
 python 3.7.1  
+torch==1.4.0  
+torchvision==0.5.0  
 `pip install -r requirements.txt`で環境を揃えることができます。 
 
 ## プログラム
